@@ -20,7 +20,7 @@ include = ["/src", "/tests", "/examples", "LICENSE*"]
 
 [dependencies]
 bevy = { version = "0.16", default-features = false, features = ["bevy_log"] }
-bevy_replicon = { version = "0.34", default-features = false }
+bevy_replicon = { version = "0.38", default-features = false }
 bevy_matchbox = "0.12"
 serde = { version = "1.0", features = ["serde_derive"] }
 bytes = "1.10"
