@@ -19,19 +19,22 @@ impl Plugin for RepliconMatchboxClientPlugin {
                 update_peers.run_if(resource_exists::<MatchboxClient>),
             )
                 .chain()
-                .in_set(ClientSet::ReceivePackets),
+                .in_set(ClientSystems::ReceivePackets),
         );
 
+        // Must run in PreUpdate (always), not Send - mirrors the server side
+        // so dropping the client transitions `ClientState` reliably.
+        app.add_systems(
+            PreUpdate,
+            set_disconnected
+                .in_set(ClientSystems::ReceivePackets)
+                .run_if(resource_removed::<MatchboxClient>),
+        );
         app.add_systems(
             PostUpdate,
-            (
-                set_disconnected
-                    .in_set(ClientSet::Send)
-                    .run_if(resource_removed::<MatchboxClient>),
-                send_packets
-                    .in_set(ClientSet::SendPackets)
-                    .run_if(not(no_host_defined).and(resource_exists::<MatchboxClient>)),
-            ),
+            send_packets
+                .in_set(ClientSystems::SendPackets)
+                .run_if(not(no_host_defined).and(resource_exists::<MatchboxClient>)),
         );
     }
 }
@@ -43,8 +46,8 @@ fn no_host_defined(client: Option<Res<MatchboxClient>>) -> bool {
     true
 }
 
-fn set_disconnected(mut replicon_client: ResMut<RepliconClient>) {
-    replicon_client.set_status(RepliconClientStatus::Disconnected);
+fn set_disconnected(mut client_state: ResMut<NextState<ClientState>>) {
+    client_state.set(ClientState::Disconnected);
 }
 
 fn update_peers(mut client: ResMut<MatchboxClient>, mut commands: Commands) {
@@ -67,7 +70,7 @@ fn update_peers(mut client: ResMut<MatchboxClient>, mut commands: Commands) {
 
 fn receive_system_channel_packets(
     mut client: ResMut<MatchboxClient>,
-    mut replicon_client: ResMut<RepliconClient>,
+    mut client_state: ResMut<NextState<ClientState>>,
 ) {
     if client.socket.all_channels_closed() {
         trace!("matchbox socket was closed");
@@ -90,7 +93,7 @@ fn receive_system_channel_packets(
         match message {
             SystemChannelMessage::ConnectedToHost => {
                 client.host_peer_id = Some(peer_id);
-                replicon_client.set_status(RepliconClientStatus::Connected);
+                client_state.set(ClientState::Connected);
             }
             SystemChannelMessage::HostRequestsDisconnect => {
                 info!("disconnected by server");
@@ -106,7 +109,7 @@ fn receive_system_channel_packets(
 
 fn receive_packets(
     mut client: ResMut<MatchboxClient>,
-    mut replicon_client: ResMut<RepliconClient>,
+    mut messages: ResMut<ClientMessages>,
     channels: Res<RepliconChannels>,
 ) {
     if client.socket.all_channels_closed() {
@@ -127,14 +130,15 @@ fn receive_packets(
                 channel_id,
                 packet.len()
             );
-            replicon_client.insert_received(channel_id, strip_marker(packet.as_ref()));
+            messages.insert_received(channel_id, strip_marker(packet.as_ref()));
         }
     }
 }
 
 fn send_packets(
     mut client: ResMut<MatchboxClient>,
-    mut replicon_client: ResMut<RepliconClient>,
+    mut messages: ResMut<ClientMessages>,
+    mut client_state: ResMut<NextState<ClientState>>,
     channels: Res<RepliconChannels>,
 ) {
     if client.socket.any_channel_closed() {
@@ -146,7 +150,7 @@ fn send_packets(
         error!("set connected before host was defined");
         return;
     };
-    for (channel_id, message) in replicon_client.drain_sent() {
+    for (channel_id, message) in messages.drain_sent() {
         //client socket channels are offset by the server channel length + 1 for the system channel
         let socket_channel_id = 1 + channels.server_channels().len() + channel_id;
         client
@@ -159,7 +163,7 @@ fn send_packets(
         client.socket.close();
         client.host_peer_id = None;
         client.should_disconnect = false;
-        replicon_client.set_status(RepliconClientStatus::Disconnected);
+        client_state.set(ClientState::Disconnected);
     }
 }
 

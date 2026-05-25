@@ -1,6 +1,6 @@
 [package]
 name = "bevy_replicon_matchbox"
-version = "0.16.1"
+version = "0.17.0"
 authors = ["Roger Kueng <rogerkueng@gmail.com>"]
 edition = "2024"
 description = "A matchbox backend for replicon, built for Bevy"
@@ -19,25 +19,25 @@ include = ["/src", "/tests", "/examples", "LICENSE*"]
 
 
 [dependencies]
-bevy = { version = "0.16", default-features = false, features = ["bevy_log"] }
-bevy_replicon = { version = "0.34", default-features = false }
-bevy_matchbox = "0.12"
+bevy = { version = "0.18", default-features = false, features = ["bevy_log"] }
+bevy_replicon = { version = "0.40", default-features = false }
+bevy_matchbox = "0.14"
 serde = { version = "1.0", features = ["serde_derive"] }
 bytes = "1.10"
 
 [dev-dependencies]
-bevy = { version = "0.16", default-features = false, features = [
+bevy = { version = "0.18", default-features = false, features = [
   "bevy_gizmos",
+  "bevy_picking",
   "bevy_state",
   "bevy_text",
-  "bevy_ui_picking_backend",
   "bevy_ui",
   "bevy_window",
   "default_font",
   "serialize",
   "x11",
 ] }
-bevy_matchbox = { version = "0.12.0", features = ["signaling"] }
+bevy_matchbox = { version = "0.14", features = ["signaling"] }
 test-log = "0.2"
 serde = "1.0"
 clap = { version = "4.1", features = ["derive"] }

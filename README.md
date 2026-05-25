@@ -1,6 +1,6 @@
 # Bevy Replicon Matchbox
 
-This crate integrates [`matchbox`](https://github.com/johanhelsing/matchbox) as a backend for [`bevy_replicon`](https://github.com/komora-io/bevy_replicon), enabling multiplayer experiences which only need a signaling server to work.
+This crate integrates [`matchbox`](https://github.com/johanhelsing/matchbox) as a backend for [`bevy_replicon`](https://github.com/simgine/bevy_replicon), enabling multiplayer experiences which only need a signaling server to work.
 
 Matchbox provides convenient NAT traversal support out of the box — no need to manually manage signaling, host discovery, or ICE negotiation.
 
@@ -10,20 +10,23 @@ Matchbox provides convenient NAT traversal support out of the box — no need to
 
 ## Running an Example
 
-To run one of the examples from the [`examples`](examples) directory:
+Two examples are ported from `bevy_replicon`: [`simple_box`](examples/simple_box.rs) and [`tic_tac_toe`](examples/tic_tac_toe.rs).
+
+Start a host (which also acts as a player):
 
 ```bash
-cargo run --example <example_name> server
+cargo run --example tic_tac_toe -- server
 ```
 
-in another terminal
+and connect a client in another terminal:
+
 ```bash
-cargo run --example <example_name> client
+cargo run --example tic_tac_toe -- client
 ```
 
-Each example starts a host peer that also acts as the listen server.
+The `server` command starts a local matchbox signaling server, so no external service is needed to try the examples. Both examples also run locally without networking (`cargo run --example tic_tac_toe -- hotseat`, or `cargo run --example simple_box -- single-player`).
 
-For production setups, it’s recommended to use a dedicated matchbox signaling server.
+For production setups, it’s recommended to run a dedicated matchbox signaling server.
 
 
 
@@ -40,6 +43,7 @@ For production setups, it’s recommended to use a dedicated matchbox signaling 
 
 | bevy | bevy_matchbox | bevy_replicon | bevy_replicon_matchbox |
 |------|---------------|---------------|------------------------|
+| 0.18 | 0.14          | 0.40          | 0.17                   |
 | 0.16 | 0.12          | 0.34          | 0.16                   |
 
 
